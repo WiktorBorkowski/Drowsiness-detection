@@ -1,27 +1,43 @@
-import torch
-from matplotlib import pyplot as plt
-import numpy as np
 import cv2
+import numpy as np
+from ultralytics import YOLO
 
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
-#img = 'https://free-images.com/lg/7c5c/people_looking_talking_on.jpg'
-cap = cv2.VideoCapture(0) #0=webcam, enter filename for videos
-while cap.isOpened():
+# Load your YOLOv8 model
+model = YOLO('Face_and_eye_yolo/V8/yolov8n.pt')
+
+# Open webcam
+cap = cv2.VideoCapture(0)  # 0 = default webcam
+
+if not cap.isOpened():
+    raise RuntimeError("Could not open webcam")
+
+FRAME_WIDTH = 640
+FRAME_HEIGHT = 480
+
+print(model.names)
+
+while True:
     ret, frame = cap.read()
-
-    results = model(frame, size=320)  #size = 320 speeds up but messes with program?
-    cv2.imshow('Object detection', np.squeeze(results.render()))
-
-    if cv2.waitKey(10) & 0xFF == ord('q'):
+    if not ret:
         break
 
+
+    frame_resized = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
+
+    # Run YOLOv8 detection
+    results = model(frame_resized)  # returns a list of Results objects
+
+    # Render bounding boxes and labels on the frame
+    annotated_frame = results[0].plot()  # YOLOv8 way
+
+
+    # Display the result
+    cv2.imshow("YOLOv8 Object Detection", annotated_frame)
+
+    # Press 'q' to quit
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Cleanup
 cap.release()
 cv2.destroyAllWindows()
-
-
-#results = model(img)
-#results.print()
-
-#results.show()
-
-
